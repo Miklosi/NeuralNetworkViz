@@ -45,10 +45,11 @@ circle.filler.outline {
 }
 
 </style>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<script type='text/javascript' src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"> </script>
 
-<script type="text/javascript" src='https://cdnjs.cloudflare.com/ajax/libs/mathjs/1.7.0/math.js'></script>
+<script type='text/javascript' src="./src/d3.v3.min.js"></script>
+<script type='text/javascript' src="./src/d3.tip.js"> </script>
+<script type="text/javascript" src='./src/math.js'></script>
+<script type="text/javascript" src='./src/neural_network.js'></script>
 
 
 <body>
@@ -64,10 +65,46 @@ circle.filler.outline {
 
 
 
-var training_data = [];
-var test_data = [];
+//var training_data = [];
+//var test_data = [];
 
 
+//TODO: test self.backprop & write self.evaluate fns
+  
+
+var training = {
+  inputs: [
+    math.matrix([[0],[0]]),
+    math.matrix([[0],[1]]),
+    math.matrix([[1],[0]]),
+    math.matrix([[1],[1]])
+  ],
+  targets: [
+    [[0]],
+    [[0]],
+    [[0]],
+    [[1]]
+  ]    
+};
+training = d3.zip(training.inputs, training.targets);
+
+
+//2 (input), 2 (hidden layer1), 1 (output)
+var myNetwork = new NeuralNetwork([2,2,1]);
+
+//testing backprop alg:
+//myNetwork.backprop(training.inputs[0],training.targets[0]);
+
+
+
+
+
+
+
+
+
+
+/*
 function updateImage(dataRow) {
 
   var imgSVG = d3.select("#imageGenerator svg g");
@@ -133,7 +170,7 @@ d3.text("./data/mnist_train_sample.csv", function(text) {
 
                       //readyCheck("mnist_train_sample.csv");
                     });
-
+*/
 
 //var readyFiles = {'mnist_train_sample.csv': false, 'mnist_train_sample.csv': false};
 //function readyCheck(filename) {
@@ -144,278 +181,6 @@ d3.text("./data/mnist_train_sample.csv", function(text) {
 //
   //}
 //}
-
-
-
-
-
-
-  //TODO: test self.backprop & write self.evaluate fns
-    
-
-  var training = {
-    inputs: [
-      math.matrix([[0],[0]]),
-      math.matrix([[0],[1]]),
-      math.matrix([[1],[0]]),
-      math.matrix([[1],[1]])
-    ],
-    targets: [
-      [0],
-      [0],
-      [0],
-      [1]
-    ]    
-  };
-  training = d3.zip(training.inputs, training.targets);
-
-
-var Network = function(sizes) {
-  
-  var self = this;
-
-  Network.prototype.init = function() {
-    self.num_layers = sizes.length;
-    self.sizes = sizes;
-    
-      //sizes: [4,5,6,7] //no. neurons at each layer
-    /*self.biases = sizes.slice(1, sizes.length)
-                       .map(function(x, i) { 
-                          return math.matrix(math.random([x]));
-                        });
-
-
-    self.weights = sizes.slice(1, sizes.length)
-                        .map(function(x, i) {
-                          return math.matrix(math.random([x,sizes[i]]));
-                        });  */
-    
-    //TEST DATA - replace math.matrix with array keyword in IPython
-    //https://www.pythonanywhere.com/try-ipython/
-    self.biases = [
-        math.matrix([[ 0.28025098],[-0.95476184],[-0.19975343]])
-        , 
-        math.matrix([[-0.23912252]])
-    ];
-
-    self.weights = [
-        math.matrix([[-0.22562396,  0.15815544],
-                     [-1.33556601, -1.75698585],
-                     [-0.6862575 , -0.28076993]]),
-        math.matrix([[ 0.32204661, -1.3949658 ,  0.11311598]])
-    ];
-
-  };
-
-
-
-  //eg.: [[1],[1]]
-  Network.prototype.feedForward = function(a) { //a: inputs
-    for (var i = 0; i < self.weights.length; i++) {
-      a = sigmoid_vec(
-            math.add(
-              math.multiply(self.weights[i], a), 
-              self.biases[i]
-            )
-          ); 
-    }
-    return a;
-  };
-
-  //https://github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network.py
-
-  //"training_data": list of tuples "(x, y)" representing the training inputs & desired outputs. 
-
-  Network.prototype.SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
-    var n = training_data.length;
-
-
-    for (var j = 1; j <= epochs; j++) {
-      var epoch_training_data = d3.shuffle(training_data);
-
-      var mini_batches = [];
-      for (var k=0; k < n; k += mini_batch_size) {
-        mini_batches.push(epoch_training_data.slice(k, k+mini_batch_size));
-      }
-
-      for (var m = 0; m < mini_batches.length; m++) {
-        self.update_mini_batch(mini_batches[m], eta);
-      }
-
-      console.log("Epoch " + j + " complete");
-    }
-
-  };
-
-  //mini_batch: array of tuples (x,y) : (training_input, target)
-  Network.prototype.update_mini_batch = function(mini_batch, eta) {
-    console.log(math.format(mini_batch));
-
-    var nabla_b = self.biases
-                      .map(function(x) { 
-                        return math.matrix(math.zeros(x.size()))
-                      });
-    var nabla_w = self.weights
-                      .map(function(x) { 
-                        return math.matrix(math.zeros(x.size())) 
-                      });
-
-    for (var m = 0; m < mini_batch.length; m++) {
-      var x = mini_batch[m][0], 
-          y = mini_batch[m][1]; 
-
-      //var backprop_result = self.backprop(x, y);
-      //var delta_nabla_b = backprop_result[0],
-      //    delta_nabla_w = backprop_result[1];
-
-      //temp solution until self.backprop() is written!!
-      var delta_nabla_b = self.biases.map(function(x) { return math.matrix(math.ones(x.size())) });
-      var delta_nabla_w = self.weights.map(function(x) { return math.matrix(math.ones(x.size())) });
-   
-      nabla_b = nabla_b.map(function(x, i) { return math.add(nabla_b[i], delta_nabla_b[i]) });
-      nabla_w = nabla_w.map(function(x, i) { return math.add(nabla_w[i], delta_nabla_w[i]) });
-      
-
-      self.biases = d3.zip(self.biases, nabla_b)
-                      .map(function(x, i) {
-                        var b = x[0], nb = x[1];
-                        return math.subtract(b, math.multiply(nb, parseFloat(eta)/mini_batch.length));
-                      });
-
-      self.weights = d3.zip(self.weights, nabla_w)
-                       .map(function(x, i) {
-                         var w = x[0], nw = x[1];
-                         return math.subtract(w, math.multiply(nw, parseFloat(eta)/mini_batch.length));
-                       });
-    }
-  };
-
-  Network.prototype.backprop = function(x, y) {
-    
-    var nabla_b = self.biases
-                      .map(function(x) { 
-                        return math.matrix(math.zeros(x.size()))
-                      });
-    var nabla_w = self.weights
-                      .map(function(x) { 
-                        return math.matrix(math.zeros(x.size())) 
-                      });
-
-    //feed-foward
-    var activation = x,
-        activations = [x],
-        zs = [];
-
-    for (var k = 0; k < self.biases.length; k++) {
-        var w = self.weights[k], 
-            b = self.biases[k];
-        var z = math.add(math.multiply(w, activation), b);
-
-        zs.push(z);
-        activations.push(sigmoid_vec(z));
-    }
-
-    //backward-pass
-        //delta = self.cost_derivative(activations[-1], y) * \ sigmoid_prime_vec(zs[-1])
-    var delta = self.cost_derivative(activations[activations.length-1], y) * 
-                  sigmoid_prime_vec(zs[zs.length-1]);
-    nabla_b[nabla_b.length-1] = delta;
-    nabla_w[nabla_w.length-1] = math.multiply(delta, math.transpose(activations[activations.length-2]));
-
-    for (var l = 2; l < self.num_layers; l++) {
-      var z = zs[zs.length-l];
-      var spv = sigmoid_prime_vec(z);
-      
-      //delta = np.dot(self.weights[-l+1].transpose(), delta) * spv
-      delta = math.multiply(math.multiply(math.transpose(activations[activations.length-l+1]), delta), spv)
-
-      nabla_b[nabla_b.length-l] = delta; //nabla_b[-l] = delta
-
-                                //nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
-      nabla_w[nabla_w.length-l] = math.multiply(delta, math.transpose(activations[activations.length-l-1]));
-      
-    }
-
-    return [nabla_b, nabla_w];
-  };
-
-  Network.prototype.evaluate = function(test_data) {
-      //return (for test_data) the no. cases where self.feed_forward(inputs) == test_data.outputs
-
-      
-      
-  };
-
-  Network.prototype.cost_derivative = function(output_activations, y) {
-    return math.subtract(output_activations, y);
-  };
-
-
-
-
-
-//math.transpose(math.matrix([[0,1]]))
-
-
-
-
-  /*
-function mlpFwd(inputs) {//
-
-  //hidden activations (hidden: 4r*3c)
-  hidden = math.multiply(inputs, weights1);//
-     //math.divide(1, math.add(math.exp(math.multiply(-1,hidden)),1))
-  hidden = hidden.map(function (value) {      
-                         return 1/(1 + Math.exp(-1*value));
-                     });
-  hidden = addBiasColumnTo(hidden);
-
-  //output activations 4r 1c
-  var activations = math.multiply(hidden, weights2);
-
-  switch (outputType) 
-  {
-    case 'linear':   
-      return linearError(activations);
-    case 'logistic':   
-      return logisticError(activations);
-    case 'softmax':   
-      return softmaxError(activations);
-  }
-
-
-}
-
-  */
-
-
-
-
-
-
-
-
-/*
-  Network.prototype.method_name = function() {
-    console.log('size:' + this.sizes);
-  };   
-*/
-
-
-
-  this.init();
-};
-
-
-var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
-var sigmoid_prime = function(z) { return this.sigmoid(z)*(1-sigmoid(z)) };
-
-var sigmoid_vec = function(v) {return v.map(sigmoid) };
-var sigmoid_prime_vec = function(v) {return v.map(sigmoid_prime) };
-
-
-
-
 
 
 
