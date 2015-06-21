@@ -1,50 +1,38 @@
 //var Network 
 
 var NeuralNetwork = function(sizes) { 
+
 	var self = this;
 
-	var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
-	var sigmoid_prime = function(z) { return sigmoid(z)*(1-sigmoid(z)) };
-
-	var sigmoid_vec = function(v) {return v.map(sigmoid) };
-	var sigmoid_prime_vec = function(v) {return v.map(sigmoid_prime) };
-
-	var zeroMatrixCopyOf = function(matrix) {
-		return matrix.map(function(x) { 
-		                    	return math.matrix(math.zeros(x.size()))
-		                  	});
-	};
-	var oneMatrixCopyOf = function(matrix) {
-		return matrix.map(function(x) { 
-								return math.matrix(math.ones(x.size())) 
-							});
-	};
-	var cost_derivative = function(output_activations, y) {
-		return math.subtract(output_activations, y);
-	};
-
-
-
 	NeuralNetwork.prototype.init = function(sizes) {
-		
+
 		self.num_layers = sizes.length;
 		self.sizes = sizes;
-/*
-		  //sizes: [4,5,6,7] //no. neurons at each layer
-		self.biases = sizes.slice(1, sizes.length)
-		                   .map(function(x, i) { 
-		                   	  return math.resize(math.random([x]), [x, 1]);
-		                    }));
 
-		self.weights = sizes.slice(1, sizes.length)
-		                    .map(function(x, i) {
-		                      return math.matrix(math.random([x,sizes[i]]));
-		                    });  
-*/
+		var initialiseFn = function() { 
+								return (Math.random() -.5) * 2/Math.sqrt(self.sizes[0]); 
+							};
+
+		var matrixApply = function(m, FUN) {
+			return m.map(function(v) { 
+							return v.map(function(w) { return FUN() }) 
+						});
+		};
+
+		/*
+		//sizes: [4,5,6,7] //no. neurons at each layer
+		self.biases = self.sizes.slice(1, self.sizes.length)
+		                   .map(function(x, i) { 
+		                   	  return matrixApply(math.ones([x, 1]), initialiseFn);
+		                    });
+		self.weights = self.sizes.slice(1, self.sizes.length)
+		                   .map(function(x, i) { 
+								return matrixApply(math.ones([x, sizes[i]]), initialiseFn)
+		                    });
+		*/
+
 		//TEST DATA - replace math.matrix with array keyword in IPython
 		//https://www.pythonanywhere.com/try-ipython/
-		
-
 		self.biases = [
 		    math.matrix([[0.262628827476874], [0.0737376578617841]])
 		    , 
@@ -59,31 +47,9 @@ var NeuralNetwork = function(sizes) {
 
 	};
 
-
-
-
-	//math.format((new NeuralNetwork([2,2,1])).biases)
-	//"[[0.262628827476874, 0.0737376578617841], [0.4326041475869715]]"
-	//math.format((new NeuralNetwork([2,2,1])).weights)
-	//"[[[0.8140114056877792, 0.7331433838699013], [0.7208098769187927, 0.12974167615175247]], [[0.23425847105681896, 0.6160134135279804]]]"
-
-
-	  
-	//eg.: [[1],[1]]
-	NeuralNetwork.prototype.feedForward = function(a) { //a: inputs
-		for (var i = 0; i < self.weights.length; i++) {
-		  a = sigmoid_vec(
-		        math.add(
-		          math.multiply(self.weights[i], a), 
-		          self.biases[i]
-		        )
-		      ); 
-		}
-		return a;
-	};
-
 	//https://github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network.py
-	//"training_data": list of tuples "(x, y)" representing the training inputs & desired outputs. 
+	//training_data: [{ value: x, target: y },...]
+	//eta: learning rate (0.25)
 	NeuralNetwork.prototype.SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
 		var n = training_data.length;
 
@@ -96,50 +62,49 @@ var NeuralNetwork = function(sizes) {
 		  	}
 
 		  	for (var m = 0; m < mini_batches.length; m++) {
-		    	self.update_mini_batch(mini_batches[m], eta);
+		    	update_mini_batch(mini_batches[m], eta);
 		  	}
 
 		  	console.log("Epoch " + j + " complete");
 		}
 	};
 
-	//mini_batch: array of tuples (x,y) : (training_input, target)
-	NeuralNetwork.prototype.update_mini_batch = function(mini_batch, eta) {
-		console.log(math.format(mini_batch));
+	//*
+	NeuralNetwork.prototype.evaluate = function(test_data) {
+		//return (for test_data) the no. cases where self.feed_forward(inputs) == test_data.outputs
 
-		var nabla_b = ZeroMatrixCopyOf(self.biases);
-		var nabla_w = ZeroMatrixCopyOf(self.weights);
+		var num_correct = test_data.map(function(d, i) {
 
-		for (var m = 0; m < mini_batch.length; m++) {
-		  var x = mini_batch[m][0], 
-		      y = mini_batch[m][1]; 
+			//tentative evaultion for character recognition:
+//			var argmax = feedForward(d)
+//							.map(function (output, i) {
+// 								return { value: output, digit: 0 }
+// 							})
+// 							.sort(function (a, b) { 
+// 								return b.value - a.value;
+// 							})[0].digit;
+//			return d.target[0][0] == argmax ? 1 : 0;
 
-		  //var backprop_result = self.backprop(x, y);
-		  //var delta_nabla_b = backprop_result[0],
-		  //    delta_nabla_w = backprop_result[1];
+			//evaluation for AND/OR/etc. logic gates:
+			return feedForward(d.value)._data[0][0] == d.target[0][0] ? 1 : 0;
+ 		});
 
-		  //temp solution until self.backprop() is written!!
-		  var delta_nabla_b = oneMatrixCopyOf(self.biases);
-		  var delta_nabla_w = oneMatrixCopyOf(self.weights);
-
-		  nabla_b = nabla_b.map(function(x, i) { return math.add(nabla_b[i], delta_nabla_b[i]) });
-		  nabla_w = nabla_w.map(function(x, i) { return math.add(nabla_w[i], delta_nabla_w[i]) });
-		  
-		  self.biases = d3.zip(self.biases, nabla_b)
-		                  .map(function(x, i) {
-		                    var b = x[0], nb = x[1];
-		                    return math.subtract(b, math.multiply(nb, parseFloat(eta)/mini_batch.length));
-		                  });
-
-		  self.weights = d3.zip(self.weights, nabla_w)
-		                   .map(function(x, i) {
-		                     var w = x[0], nw = x[1];
-		                     return math.subtract(w, math.multiply(nw, parseFloat(eta)/mini_batch.length));
-		                   });
-		}
+		return parseFloat(d3.sum(num_correct)) / test_data.length;
 	};
 
-	NeuralNetwork.prototype.backprop = function(x, y) {
+	var feedForward = function(a) { //a: inputs, eg.: [[1],[1]]
+		for (var i = 0; i < self.weights.length; i++) {
+		  a = sigmoid_vec(
+		        math.add(
+		          math.multiply(self.weights[i], a), 
+		          self.biases[i]
+		        )
+		      ); 
+		}
+		return a;
+	};
+
+	var backprop = function(x, y) {
 
 		var nabla_b = zeroMatrixCopyOf(self.biases);
 		var nabla_w = zeroMatrixCopyOf(self.weights);
@@ -184,29 +149,95 @@ var NeuralNetwork = function(sizes) {
 
 		return [nabla_b, nabla_w];
 	};
+	
+	var update_mini_batch = function(mini_batch, eta) {
+		//console.log(math.format(mini_batch));
 
-	NeuralNetwork.prototype.evaluate = function(test_data) {
-		//return (for test_data) the no. cases where self.feed_forward(inputs) == test_data.outputs
+		var nabla_b = zeroMatrixCopyOf(self.biases);
+		var nabla_w = zeroMatrixCopyOf(self.weights);
 
+		for (var m = 0; m < mini_batch.length; m++) {
+		  var x = mini_batch[m].value, 
+		      y = mini_batch[m].target; 
+
+		  var backprop_result = self.backprop(x, y);
+		  var delta_nabla_b = backprop_result[0],
+		      delta_nabla_w = backprop_result[1];
+
+		  //temp solution until self.backprop() is written!!
+		  //var delta_nabla_b = oneMatrixCopyOf(self.biases);
+		  //var delta_nabla_w = oneMatrixCopyOf(self.weights);
+
+		  nabla_b = nabla_b.map(function(x, i) { return math.add(nabla_b[i], delta_nabla_b[i]) });
+		  nabla_w = nabla_w.map(function(x, i) { return math.add(nabla_w[i], delta_nabla_w[i]) });
+		  
+		  self.biases = d3.zip(self.biases, nabla_b)
+		                  .map(function(x, i) {
+		                    var b = x[0], nb = x[1];
+		                    return math.subtract(b, math.multiply(nb, parseFloat(eta)/mini_batch.length));
+		                  });
+
+		  self.weights = d3.zip(self.weights, nabla_w)
+		                   .map(function(x, i) {
+		                     var w = x[0], nw = x[1];
+		                     return math.subtract(w, math.multiply(nw, parseFloat(eta)/mini_batch.length));
+		                   });
+		}
 	};
 
+	var cost_derivative = function(output_activations, y) {
+		//todo: add different cost_derivative formulas (see bottom of file)
+		return math.subtract(output_activations, y);
+	};
 
+	var zeroMatrixCopyOf = function(matrix) {
+		return matrix.map(function(x) { 
+		                    	return math.matrix(math.zeros(x.size()))
+		                  	});
+	};
+	var oneMatrixCopyOf = function(matrix) {
+		return matrix.map(function(x) { 
+								return math.matrix(math.ones(x.size())) 
+							});
+	};
 
+	var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
+	var sigmoid_prime = function(z) { return sigmoid(z)*(1-sigmoid(z)) };
 
+	var sigmoid_vec = function(v) {return v.map(sigmoid) };
+	var sigmoid_prime_vec = function(v) {return v.map(sigmoid_prime) };
 
+	
 
 	self.init(sizes);
 
 	return self;
 
-
-//NeuralNetwork defn ends
 };
 
+/*
+function linearError(activations) {
+  return math.dotMultiply(
+                math.subtract(activations, targets),
+                1/nData);
+}
 
+function logisticError(activations) {
+  return math.dotMultiply.call(
+                  math.subtract(activations, targets),
+                  activations,
+                  math.subtract(1, activations)
+                );
+}
 
-
-
-//  this.init();
-
-//module.exports = new NeuralNetwork();
+function softmaxError(activations) {
+  return math.dotMultiply.call(
+                  math.subtract(activations, targets),
+                  math.subtract(
+                        activations,
+                        math.dotMultiply.call(activations, activations, -1)
+                  ),
+                  1/nData
+                );
+}
+*/

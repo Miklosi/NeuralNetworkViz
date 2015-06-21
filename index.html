@@ -51,11 +51,9 @@ circle.filler.outline {
 <script type="text/javascript" src='./src/math.js'></script>
 <script type="text/javascript" src='./src/neural_network.js'></script>
 
-
 <body>
 
   <div id="netoworkGraphContainer">
-      
   </div>
   
   <div id="imageGenerator">
@@ -72,37 +70,27 @@ circle.filler.outline {
 //TODO: test self.backprop & write self.evaluate fns
   
 
-var training = {
-  inputs: [
-    math.matrix([[0],[0]]),
-    math.matrix([[0],[1]]),
-    math.matrix([[1],[0]]),
-    math.matrix([[1],[1]])
-  ],
-  targets: [
-    [[0]],
-    [[0]],
-    [[0]],
-    [[1]]
-  ]    
-};
-training = d3.zip(training.inputs, training.targets);
-
+var training_data = [
+    { value: math.matrix([[0],[0]]), target: [[0]] },
+    { value: math.matrix([[0],[1]]), target: [[0]] },
+    { value: math.matrix([[1],[0]]), target: [[0]] },
+    { value: math.matrix([[1],[1]]), target: [[1]] }
+  ];
 
 //2 (input), 2 (hidden layer1), 1 (output)
 var myNetwork = new NeuralNetwork([2,2,1]);
 
 //testing backprop alg:
-//myNetwork.backprop(training.inputs[0],training.targets[0]);
+//myNetwork.backprop(training_data[0].value, training_data[0].target);
 
+//testing feed forward:
+//myNetwork.feedForward(training_data[0].value);
 
+//testing update_mini_batch:
+//myNetwork.update_mini_batch(training_data, 1)
 
-
-
-
-
-
-
+//testing SGD alg:
+//myNetwork.SGD(training_data, 5, training_data.length, 1);
 
 /*
 function updateImage(dataRow) {
@@ -183,216 +171,6 @@ d3.text("./data/mnist_train_sample.csv", function(text) {
 //}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-//math.matrix([[0, 1], [2, 3], [4, 5]]); 
-
-
-
-var inputDimensions = 2, //nIn
-    outputDimensions = 1, //nOut
-    BIAS_VALUE = -1, //constant value for bias
-    TRAINING_EPOCHS = 5001; //#1001, 5001
-
-var inputs = math.matrix([
-                   [0, 0],
-                   [0, 1],
-                   [1, 0],
-                   [1, 1]
-            ]),
-    targets = math.matrix([
-                   [0],
-                   [1],
-                   [1],
-                   [1]
-            ]);
-
-var nData = inputs.size()[0], //4 in this case
-    nHidden = 2, //no. hidden neurons
-    learningrate = 0.25,
-    momentum = 0.9,
-    hidden = math.ones(nHidden+1,nData),
-    outputType = "linear";
-
-var initialiseFn = function(x) { return (Math.random() -.5) * 2/Math.sqrt(inputDimensions); };
-
-                //weights from inputs to hidden neurons
-var weights1 = math.ones(inputDimensions+1, nHidden)
-                   .map(initialiseFn), 
-
-                //weights from hidden neurons to outputs
-    weights2 = math.ones(nHidden+1, outputDimensions)
-                   .map(initialiseFn);
-
-
-var addBiasColumnTo = function(matrix) {
-    var nRows = matrix.size()[0], 
-        nCols = matrix.size()[1];
-
-    return matrix.resize([nRows, nCols+1])
-                 .map(function(x, i) { 
-                   return i[1] == nCols ? BIAS_VALUE : x; 
-                 });
-}
-
-
-inputs = addBiasColumnTo(inputs);
-
-
-function linearError(activations) {
-  return math.dotMultiply(
-                math.subtract(activations, targets),
-                1/nData);
-}
-
-function logisticError(activations) {
-  return math.dotMultiply.call(
-                  math.subtract(activations, targets),
-                  activations,
-                  math.subtract(1, activations)
-                );
-}
-
-function softmaxError(activations) {
-  return math.dotMultiply.call(
-                  math.subtract(activations, targets),
-                  math.subtract(
-                        activations,
-                        math.dotMultiply.call(activations, activations, -1)
-                  ),
-                  1/nData
-                );
-}
-
-
-
-
-
-function mlpFwd(inputs) {//
-
-  //hidden activations (hidden: 4r*3c)
-  hidden = math.multiply(inputs, weights1);//
-     //math.divide(1, math.add(math.exp(math.multiply(-1,hidden)),1))
-  hidden = hidden.map(function (value) {      
-                         return 1/(1 + Math.exp(-1*value));
-                     });
-  hidden = addBiasColumnTo(hidden);
-
-  //output activations 4r 1c
-  var activations = math.multiply(hidden, weights2);
-
-  switch (outputType) 
-  {
-    case 'linear':   
-      return linearError(activations);
-    case 'logistic':   
-      return logisticError(activations);
-    case 'softmax':   
-      return softmaxError(activations);
-  }
-
-
-}
-
-
-
-var updateW1 = math.zeros(weights1.size()[0],weights1.size()[1]),
-    updateW2 = math.zeros(weights2.size()[0],weights2.size()[1]),
-    activations = null;
-
-
-for (var i=0; i<TRAINING_EPOCHS; i++) {
-  
-  //feed forward the inputs to get the current outputs
-  activations = mlpFwd(inputs)
-
-  //error <- 0.5 * sum((activations-targets)^2)
-  //#if(error %% 100 == 0) break
-  
-  //amount to change weights2 by
-  switch (outputType) 
-  {
-    case 'linear':   
-      delta0 = linearError(activations);
-      break;
-    case 'logistic':   
-      delta0 = logisticError(activations);
-      break;
-    case 'softmax':   
-      delta0 = softmaxError(activations);
-      break;
-  }
-
-  //amount to change weights1 by
-    //-hidden * (1-hidden) * deltaO %*% t(weights2)
-  deltaH = math.dotMultiply.call(
-                    math.multiply(hidden, -1), 
-                    math.subtract(1, hidden),
-                    math.multiply(delta0, math.transpose(weights2))              
-            );
-    
-  
-  //updateW1 <- 
-    //learningrate * 
-    //(t(inputs) %*% deltaH[,-ncol(deltaH)]) + 
-    //(momentum * updateW1)
-  updateW1 = math.multiply(
-                learningrate,
-                math.add(
-                  math.multiply(
-                    math.transpose(inputs),
-                    deltaH.resize([deltaH.size()[0],deltaH.size()[1]-1])
-                  ),
-                  math.multiply(momentum, updateW1)
-                )
-             );
-
-  //updateW2 <- 
-    //learningrate * 
-    //(t(hidden) %*% deltaO) + 
-    //(momentum * updateW2)
-  updateW2 = math.multiply(
-                learningrate,
-                math.add(
-                  math.multiply(
-                    math.transpose(hidden),
-                    delta0
-                  ),
-                  math.multiply(momentum, updateW2)
-                )
-             );
-
-
-  weights1 = math.subtract(weights1, updateW1);
-  weights2 = math.subtract(weights2, updateW2);
-}
-
-//
-//testing: (if working output = target)
-//mlpfwd(inputs)
-//ifelse(mlpfwd(inputs) > .5,1,0)
-console.log(
-    math.format(
-      activations.map(function(x) { 
-                        return x > 0 ? 1 : 0 }), 
-      1)
-    );
-
-
-
-hidden.map(function(x, i) { 
-  return i.toString().replace(",","") 
-})._data
 
 
 
