@@ -61,36 +61,41 @@ circle.filler.outline {
 
 <script>
 
-
-
-//var training_data = [];
-//var test_data = [];
-
-
-//TODO: test self.backprop & write self.evaluate fns
-  
-
-var training_data = [
+var AND_training_data = [
     { value: math.matrix([[0],[0]]), target: [[0]] },
     { value: math.matrix([[0],[1]]), target: [[0]] },
     { value: math.matrix([[1],[0]]), target: [[0]] },
     { value: math.matrix([[1],[1]]), target: [[1]] }
+  ],
+  OR_training_data = [
+    { value: math.matrix([[0],[0]]), target: [[0]] },
+    { value: math.matrix([[0],[1]]), target: [[1]] },
+    { value: math.matrix([[1],[0]]), target: [[1]] },
+    { value: math.matrix([[1],[1]]), target: [[1]] }
+  ],
+  XOR_training_data = [
+    { value: math.matrix([[0],[0]]), target: [[0]] },
+    { value: math.matrix([[0],[1]]), target: [[1]] },
+    { value: math.matrix([[1],[0]]), target: [[1]] },
+    { value: math.matrix([[1],[1]]), target: [[0]] }
   ];
+
+//2 (input), 1 (output)  <no hidden layers>
+var mySimpleNetwork = new NeuralNetwork([2,1]);
+//mySimpleNetwork.train(AND_training_data, 5000, AND_training_data.length, 0.25);
+//mySimpleNetwork.evaluate(AND_training_data);
 
 //2 (input), 2 (hidden layer1), 1 (output)
 var myNetwork = new NeuralNetwork([2,2,1]);
+//myNetwork.train(AND_training_data, 5000, AND_training_data.length, 0.25);
+//myNetwork.evaluate(AND_training_data);
 
-//testing backprop alg:
-//myNetwork.backprop(training_data[0].value, training_data[0].target);
+//784 (input), 30 (hidden layer1), 10 (output)
+//var myCharacterRecognitionNetwork = new NeuralNetwork([784,30,10]);
+//myCharacterRecognitionNetwork.train(img_training_data, 5000, img_training_data.length, 0.25);
+//myCharacterRecognitionNetwork.evaluate(img_training_data);
 
-//testing feed forward:
-//myNetwork.feedForward(training_data[0].value);
 
-//testing update_mini_batch:
-//myNetwork.update_mini_batch(training_data, 1)
-
-//testing SGD alg:
-//myNetwork.SGD(training_data, 5, training_data.length, 1);
 
 /*
 function updateImage(dataRow) {

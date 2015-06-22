@@ -54,23 +54,8 @@ var NeuralNetwork = function(sizes) {
 
 	//training_data: [{ value: x, target: y },...]
 	//eta: learning rate (0.25)
-	NeuralNetwork.prototype.SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
-		var n = training_data.length;
-
-		for (var j = 1; j <= epochs; j++) {
-			var epoch_training_data = training_data; //d3.shuffle(training_data);
-
-		  	var mini_batches = [];
-		  	for (var k=0; k < n; k += mini_batch_size) {
-		    	mini_batches.push(epoch_training_data.slice(k, k+mini_batch_size));
-		  	}
-
-		  	for (var m = 0; m < mini_batches.length; m++) {
-		    	update_mini_batch(mini_batches[m], eta);
-		  	}
-
-		  	console.log("Epoch " + j + " complete");
-		}
+	NeuralNetwork.prototype.train = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
+		SGD(training_data, epochs, mini_batch_size, eta);
 	};
 
 	//*
@@ -95,10 +80,29 @@ var NeuralNetwork = function(sizes) {
 
 			console.log("input: %s, output: %f, target: %f", math.format(d.value), actual, target);
 
-			return actual.toFixed(3) == target.toFixed(3) ? 1 : 0;
+			return Math.round(actual.toFixed(3)) == Math.round(target.toFixed(3)) ? 1 : 0;
  		});
 
 		return parseFloat(d3.sum(num_correct)) / test_data.length;
+	};
+
+	var SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
+		var n = training_data.length;
+
+		for (var j = 1; j <= epochs; j++) {
+			var epoch_training_data = training_data; //d3.shuffle(training_data);
+
+		  	var mini_batches = [];
+		  	for (var k=0; k < n; k += mini_batch_size) {
+		    	mini_batches.push(epoch_training_data.slice(k, k+mini_batch_size));
+		  	}
+
+		  	for (var m = 0; m < mini_batches.length; m++) {
+		    	update_mini_batch(mini_batches[m], eta);
+		  	}
+
+		  	console.log("Epoch " + j + " complete");
+		}
 	};
 
 	var feedForward = function(a) { //a: inputs, eg.: [[1],[1]]
@@ -202,8 +206,8 @@ var NeuralNetwork = function(sizes) {
 		//MSE (linear mean-squared error)
 		return  math.chain(output_activations)
 					.subtract(y)
-					.square()
-					.multiply(1/parseFloat(2*n)) //4: no. training cases
+					//.square()
+					//.multiply(1/parseFloat(2*n)) //4: no. training cases
 					.done();
 	};
 
