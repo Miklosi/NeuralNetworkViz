@@ -1,8 +1,14 @@
-
+//Code adapted from 
+//https://github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network.py
+	
 var NeuralNetwork = function(sizes) { 
 
 	var self = this;
 
+	//sizes: no. neurons at each layer
+	//e.g. [2,2,1] = [2 (input), 2 (hidden layer1), 1 (output)]
+	//for truth-tables: [2,2,1]
+	//for character-recognition: [784, 30, 10]
 	NeuralNetwork.prototype.init = function(sizes) {
 
 		self.num_layers = sizes.length;
@@ -19,7 +25,6 @@ var NeuralNetwork = function(sizes) {
 		};
 
 
-		//sizes: [4,5,6,7] //no. neurons at each layer
 		self.biases =   self.sizes.slice(1, self.sizes.length)
 		                    .map(function(x, i) { 
 		                   	  return math.matrix(matrixApply(math.ones([x, 1]), initialiseFn));
@@ -30,7 +35,7 @@ var NeuralNetwork = function(sizes) {
 		                    });
 
 /*
-		//TEST DATA
+		//TEST STATIC DATA
 		self.biases = [
 		    math.matrix([[0.262628827476874], [0.0737376578617841]])
 		    , 
@@ -47,7 +52,6 @@ var NeuralNetwork = function(sizes) {
 
 	};
 
-	//https://github.com/mnielsen/neural-networks-and-deep-learning/blob/master/src/network.py
 	//training_data: [{ value: x, target: y },...]
 	//eta: learning rate (0.25)
 	NeuralNetwork.prototype.SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
@@ -108,12 +112,12 @@ var NeuralNetwork = function(sizes) {
 		return a;
 	};
 
-	var backprop = function(x, y) {
+	var backprop = function(x, y, n) {
 
 		var nabla_b = zeroMatrixCopyOf(self.biases);
 		var nabla_w = zeroMatrixCopyOf(self.weights);
 
-		//feed-foward
+		//feed-foward: get activations & component z-scores (weighted sum of inputs)
 		var activation = x,
 		    activations = [x],
 		    zs = [];
@@ -129,10 +133,8 @@ var NeuralNetwork = function(sizes) {
 		    activations.push(sigmoid_vec(z));
 		}
 
-		//backward-pass
-
-		//output error
-		var delta = math.chain(cost_derivative(activations[activations.length-1], y))
+		//output error: (via cost derivative), how inaccurate are activations vs. targets?
+		var delta = math.chain(cost_derivative(activations[activations.length-1], y, n))
 						.dotMultiply(sigmoid_prime_vec(zs[zs.length-1])).done();
 
 		nabla_b[nabla_b.length-1] = delta;
@@ -142,6 +144,7 @@ var NeuralNetwork = function(sizes) {
 												.transpose().done()
 										).done();
 
+		//backpropagate error: determine output error contributions from each previous layer
 		for (var l = 2; l < self.num_layers; l++) {
 			var z = zs[zs.length-l];
 			var spv = sigmoid_prime_vec(z);
@@ -173,7 +176,7 @@ var NeuralNetwork = function(sizes) {
 		  var x = mini_batch[m].value, 
 		      y = mini_batch[m].target; 
 
-		  var backprop_result = backprop(x, y);
+		  var backprop_result = backprop(x, y, mini_batch.length);
 		  var delta_nabla_b = backprop_result[0],
 		      delta_nabla_w = backprop_result[1];
 
@@ -194,9 +197,14 @@ var NeuralNetwork = function(sizes) {
 		}
 	};
 
-	var cost_derivative = function(output_activations, y) {
+	var cost_derivative = function(output_activations, y, n) {
 		//todo: add different cost_derivative formulas (see bottom of file)
-		return math.subtract(output_activations, y);
+		//MSE (linear mean-squared error)
+		return  math.chain(output_activations)
+					.subtract(y)
+					.square()
+					.multiply(1/parseFloat(2*n)) //4: no. training cases
+					.done();
 	};
 
 	var zeroMatrixCopyOf = function(matrix) {
