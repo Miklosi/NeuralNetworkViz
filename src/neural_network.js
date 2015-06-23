@@ -116,7 +116,7 @@ var NeuralNetwork = function(sizes) {
 		return a;
 	};
 
-	var backprop = function(x, y, n) {
+	var backprop = function(x, y) {
 
 		var nabla_b = zeroMatrixCopyOf(self.biases);
 		var nabla_w = zeroMatrixCopyOf(self.weights);
@@ -138,7 +138,7 @@ var NeuralNetwork = function(sizes) {
 		}
 
 		//output error: (via cost derivative), how inaccurate are activations vs. targets?
-		var delta = math.chain(cost_derivative(activations[activations.length-1], y, n))
+		var delta = math.chain(cost_derivative(activations[activations.length-1], y))
 						.dotMultiply(sigmoid_prime_vec(zs[zs.length-1])).done();
 
 		nabla_b[nabla_b.length-1] = delta;
@@ -180,7 +180,7 @@ var NeuralNetwork = function(sizes) {
 		  var x = mini_batch[m].value, 
 		      y = mini_batch[m].target; 
 
-		  var backprop_result = backprop(x, y, mini_batch.length);
+		  var backprop_result = backprop(x, y);
 		  var delta_nabla_b = backprop_result[0],
 		      delta_nabla_w = backprop_result[1];
 
@@ -201,15 +201,35 @@ var NeuralNetwork = function(sizes) {
 		}
 	};
 
-	var cost_derivative = function(output_activations, y, n) {
-		//todo: add different cost_derivative formulas (see bottom of file)
-		//MSE (linear mean-squared error)
+	var cost_derivative = function(output_activations, targets) {
+		return linearError(output_activations, targets);
+	};
+
+	var linearError = function(output_activations, targets) {
 		return  math.chain(output_activations)
-					.subtract(y)
-					//.square()
-					//.multiply(1/parseFloat(2*n)) //4: no. training cases
+					.subtract(targets)
 					.done();
 	};
+
+	var logisticError = function(output_activations, targets) {
+		return math.dotMultiply.call(
+	                  math.subtract(output_activations, targets),
+	                  output_activations,
+	                  math.subtract(1, output_activations)
+	                );
+	}
+
+	var softmaxError = function(output_activations, targets) {
+	  return math.dotMultiply(
+	                  math.subtract(output_activations, targets),
+	                  math.subtract(
+	                        output_activations,
+	                        math.multiply(math.square(output_activations), -1)
+	                  )
+	                );
+	}
+
+
 
 	var zeroMatrixCopyOf = function(matrix) {
 		return matrix.map(function(x) { 
@@ -235,30 +255,3 @@ var NeuralNetwork = function(sizes) {
 	return self;
 
 };
-
-/*
-function linearError(activations) {
-  return math.dotMultiply(
-                math.subtract(activations, targets),
-                1/nData);
-}
-
-function logisticError(activations) {
-  return math.dotMultiply.call(
-                  math.subtract(activations, targets),
-                  activations,
-                  math.subtract(1, activations)
-                );
-}
-
-function softmaxError(activations) {
-  return math.dotMultiply.call(
-                  math.subtract(activations, targets),
-                  math.subtract(
-                        activations,
-                        math.dotMultiply.call(activations, activations, -1)
-                  ),
-                  1/nData
-                );
-}
-*/
