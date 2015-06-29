@@ -5,16 +5,10 @@ g {
   }
 }
 
-line {
-  .link {
+line.link {
     stroke: #bdbdbd; /*#999;*/
     stroke-opacity: .6;
-  } 
-  .divider {
-    stroke: #000; /*#666;*/
-    stroke-width: 1;
-  }
-}
+} 
 
 .d3-tip {
     line-height: 1;
@@ -23,8 +17,23 @@ line {
     text-align: center;
 }
 
-circle.filler.outline {
+circle {
+  &.input {
+    
+    fill: #fff;
+    stroke: #000;
+
+    &.filled {
+      fill: #000;
+    }
+  }
+  &.output {
     fill: #000;
     stroke: #000;
-    stroke-width: 1.5;
+  }
+  &.hidden {
+    fill: #666;
+    stroke: #000; 
+  }
+
 }

@@ -11,7 +11,7 @@
 
 <body>
 
-  <div id="netoworkGraphContainer">
+  <div id="networkGraphContainer">
   </div>
   
   <div id="imageGenerator">
@@ -100,12 +100,18 @@ function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
                     if(index == 0) return "IN";
                     else if(index == length-1) return "OUT";
                     else return "HiddenL" + (index);
+                  },
+      typeFn = function(index) { 
+                    if(index == 0) return "input";
+                    else if(index == length-1) return "output";
+                    else return "hidden";
                   };
 
   var nodes = sizes.map(function(d, i) { 
 
               return d3.range(d).map(function(x, j) {
                 return {
+                  type: typeFn(i),
                   layer: i,
                   index: j,
                   name: namePrefix(i) + "n" + (j+1),
@@ -164,7 +170,7 @@ var graphMLPData = //buildFullyConnectedNodeGraph([2,2,1], {}, myNetwork);
       //buildFullyConnectedNodeGraph([1,1]);
 
 
-var svg = d3.select("#netoworkGraphContainer").append("svg")
+var svg = d3.select("#networkGraphContainer").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -189,7 +195,7 @@ var svg = d3.select("#netoworkGraphContainer").append("svg")
                       
         nodes.enter()
              .append("circle")
-             .attr('class','node');
+             .attr('class', function (d) { return d.type + " node"});
 
         //Set up tooltip
         var tip = d3.tip()
