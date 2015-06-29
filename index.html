@@ -182,39 +182,118 @@ d3.text("./data/mnist_train_sample.csv", function(text) {
 var width = 500,
     height = 500,
     minCircleRadius = 0;
-
-
+/*
+// 2,2,1
 var graphMLPData = {
   nodes: [
     { name: "in1", group: 0, size: 25, x: width/4, y: height/3, fixed: true },
     { name: "in2", group: 1, size: 25, x: width/4, y: 2*height/3, fixed: true },
 
-
-      { name: "biashidden1", group: 2, size: 25, x: 3*width/8, y: height/6, fixed: true },  
+//      { name: "biashidden1", group: 2, size: 25, x: 3*width/8, y: height/6, fixed: true },  
     { name: "hidden1", group: 3, size: 25, x: width/2, y: height/3, fixed: true },
     { name: "hidden2", group: 4, size: 25, x: width/2, y: 2*height/3, fixed: true },
 
-      { name: "biasOut", group: 5, size: 25, x: 5*width/8, y: height/6, fixed: true },  
-    { name: "out1", group: 6, size: 25, x: 3*width/4, y: height/2, fixed: true }
+//      { name: "biasOut", group: 5, size: 25, x: 5*width/8, y: height/6, fixed: true },  
+    { name: "out1", group: 4, size: 25, x: 3*width/4, y: height/2, fixed: true }
   ],
   links: [  //source & target: index in nodes array,   value:  strength of link 
       
+    { source: 0, target: 2, value: 10, display: true },
     { source: 0, target: 3, value: 10, display: true },
-    { source: 0, target: 4, value: 10, display: true },
 
+    { source: 1, target: 2, value: 10, display: true },
     { source: 1, target: 3, value: 10, display: true },
-    { source: 1, target: 4, value: 10, display: true },
       
-    { source: 2, target: 3, value: 10, display: true },
-    { source: 2, target: 4, value: 10, display: true },
+  //  { source: 2, target: 3, value: 10, display: true },
+ //   { source: 2, target: 4, value: 10, display: true },
 
-    { source: 5, target: 6, value: 10, display: true },
+ //   { source: 5, target: 6, value: 10, display: true },
     
-    { source: 3, target: 6, value: 10, display: true },
-    { source: 4, target: 6, value: 10, display: true },
+    { source: 2, target: 4, value: 10, display: true },
+    { source: 3, target: 4, value: 10, display: true },
      
   ]
 };
+*/
+
+//1 = 1/2
+//2 = 1/4
+//3 = 1/8
+
+
+
+function buildFullyConnectedNodeGraph(sizes) {
+  var margin = 0,
+      length = sizes.length,
+      n = d3.sum(sizes) * parseInt(length),
+      xScale = d3.scale.linear()
+                       .domain([0, length])
+                       .range([margin, width-margin]),
+      namePrefix = function(index) { 
+                    if(index == 0) return "in";
+                    else if(index == length-1) return "out";
+                    else return "hiddenL" + index;
+                  };
+
+  var nodes = sizes.map(function(d, i) { 
+
+              var midpoint = height/2;
+              var num_nodes = d;
+
+
+
+              var yScale = d3.scale.linear()
+                          .domain([0, d])
+                          .range([margin+(height/(d+1)), height-(margin+(height/(d+1)))]);
+
+              return d3.range(d).map(function(x, j) {
+                return {
+                  layer: i,
+                  index: j,
+                  name: namePrefix(i) + "n" + j,
+                  size: 25,
+                  fixed: true,
+                  x: xScale(i),
+                  y: yScale(j)
+                }  
+              })
+         }).reduce(function(d1,d2){ 
+            return d1.concat(d2) 
+         },[])
+         .map(function(d, i) {
+            d.group = i;
+            return d;
+         });
+  
+  var links = nodes.filter(function(d) {
+    return d.layer != (length-1);
+  }).map(function(d) {
+    return nodes.filter(function(x) {
+      return x.layer == (d.layer + 1)
+    }).map(function(x) {
+      return {
+        source: d.group,
+        target: x.group,
+        value: 10,
+        display: true
+      }
+    });
+  }).reduce(function(d1,d2){ 
+            return d1.concat(d2) 
+  },[]);
+
+  return {
+    nodes: nodes,
+    links: links
+  }
+}
+
+var graphMLPData = buildFullyConnectedNodeGraph([4,3,2,1]);
+
+
+
+
+
 
 
 
