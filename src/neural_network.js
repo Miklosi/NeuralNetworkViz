@@ -54,15 +54,15 @@ var NeuralNetwork = function(sizes) {
 
 	//training_data: [{ value: x, target: y },...]
 	//eta: learning rate (0.25)
-	NeuralNetwork.prototype.train = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
-		SGD(training_data, epochs, mini_batch_size, eta);
+	NeuralNetwork.prototype.train = function(training_data, epochs, mini_batch_size, eta, test_data) {//,test_data=None
+		SGD(training_data, epochs, mini_batch_size, eta, test_data);
 	};
 
 	//*
 	NeuralNetwork.prototype.evaluate = function(test_data) {
 		//return (for test_data) the no. cases where self.feed_forward(inputs) == test_data.outputs
 
-		var num_correct = test_data.map(function(d, i) {
+		return d3.sum(test_data.map(function(d, i) {
 
 			//tentative evaultion for character recognition:
 //			var argmax = feedForward(d)
@@ -78,15 +78,13 @@ var NeuralNetwork = function(sizes) {
 			var target = d.target[0][0],
 				actual = feedForward(d.value)._data[0][0];
 
-			console.log("input: %s, output: %f, target: %f", math.format(d.value), actual, target);
+			//console.log("input: %s, output: %f, target: %f", math.format(d.value), actual, target);
 
 			return Math.round(actual.toFixed(3)) == Math.round(target.toFixed(3)) ? 1 : 0;
- 		});
-
-		return parseFloat(d3.sum(num_correct)) / test_data.length;
+ 		}));
 	};
 
-	var SGD = function(training_data, epochs, mini_batch_size, eta) {//,test_data=None
+	var SGD = function(training_data, epochs, mini_batch_size, eta, test_data) {
 		var n = training_data.length;
 
 		for (var j = 1; j <= epochs; j++) {
@@ -101,7 +99,10 @@ var NeuralNetwork = function(sizes) {
 		    	update_mini_batch(mini_batches[m], eta);
 		  	}
 
-		  	console.log("Epoch " + j + " complete");
+		  	if(test_data)
+		  		console.log("Epoch %d: %f / %f", j, self.evaluate(test_data), n);
+		  	else
+		  		console.log("Epoch %d complete", j);
 		}
 	};
 
