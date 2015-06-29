@@ -2,49 +2,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Access-Control-Allow-Origin" content="*"/>
 
-<style>
-
-svg {
-  /*position: absolute;*/
-}
-
-g.node {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-line.link {
-  stroke: #bdbdbd; /*#999;*/
-  stroke-opacity: .6;
-}
-
-.d3-tip {
-    line-height: 1;
-    color: black;
-    font-family: Arial;
-    text-align: center;
-}
-
-.g-premium circle, circle.premium {
-    fill: #00a3e0;
-}
-.g-claim circle, circle.claim {
-    fill: #e4002b;
-
-}
-
-line.divider {
-    stroke: #000; /*#666;*/
-    stroke-width: 1;
-}
-
-circle.filler.outline {
-    fill: #000;
-    stroke: #000;
-    stroke-width: 1.5;
-}
-
-</style>
+<link class="main-stylesheet" href="./styles/css/styles.css" rel="stylesheet" type="text/css" />
 
 <script type='text/javascript' src="./src/d3.v3.min.js"></script>
 <script type='text/javascript' src="./src/d3.tip.js"> </script>
@@ -96,165 +54,65 @@ var myNetwork = new NeuralNetwork([2,2,1]);
 //myCharacterRecognitionNetwork.evaluate(img_training_data);
 
 
+var width = 500,
+    height = 500;
 
-/*
-function updateImage(dataRow) {
+function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
 
-  var imgSVG = d3.select("#imageGenerator svg g");
-
-  //data join
-  var rect = imgSVG.selectAll('rect')
-                   .data(dataRow.values);
-
-  //note: assume square, so image is dimension*dimension
-  var dimension = math.sqrt(dataRow.values.length);
-  var pixelDimensions = 10;
-
-  //update old elements as needed [only if enter().append("rect") is removed]
-
-  function updatePixels(elem) {
-    elem.attr({
-    //rect.enter().append("rect")
-        //.attr({
-          width: pixelDimensions,
-          height: pixelDimensions,
-          x: function(d, i) {
-            return pixelDimensions * parseInt(i % dimension);
-          },
-          y: function(d, i) {
-            return pixelDimensions * parseInt(i / dimension);
-          }
-        }).style({
-          fill: function (d,i) {
-            return "rgb(" + d + "," + d + "," + d + ")";
-          }
-        });
+  function setOptions (standard, user) {
+    if (typeof user === 'object') {
+      for (var key in user) {
+        standard[key] = user[key];
+      }
+    }
+    return standard;
   }
 
-  updatePixels(rect);
-  
-  updatePixels(rect.enter().append("rect"));
-    
-  rect.exit().remove();
-
-}
-
+  function flattenSimple (arr) {
+    return arr.reduce(function(d1,d2) { return d1.concat(d2) },[]);
+  }
+  function unpack (matrix) {
+    return flattenSimple(matrix._data);
+  }
 
 
-//d3.csv("./data/mnist_train_sample.csv", function(data) {
-d3.text("./data/mnist_train_sample.csv", function(text) {
-                      training_data = d3.csv.parseRows(text)
-                                        .map(function(row) {
-                                          return {
-                                            result: +row.slice(0,1),
-                                            values: row.slice(1).map(function(value) { return +value; })
-                                          };
-                                        });
+  var optionsDefault = {
+    width: 500,
+    height: 500,
+    circleSize: 25,
+    margin: 30
+  };
+  var options = setOptions(optionsDefault, options);
 
-                      var svg = d3.select("#imageGenerator")
-                                  .append("svg")
-                                  .attr({
-                                    width: 280,
-                                    height: 280
-                                  })
-                                  .append("g");
-
-                      updateImage(training_data[0]);
-
-                      //readyCheck("mnist_train_sample.csv");
-                    });
-*/
-
-//var readyFiles = {'mnist_train_sample.csv': false, 'mnist_train_sample.csv': false};
-//function readyCheck(filename) {
-  //readyFiles[filename] = true;
-//
-  //if (readyFiles['mnist_train_sample']==true && readyFiles['mnist_train_sample']==true) {
-    ////...begin drawing visualization...
-//
-  //}
-//}
+  var weights, biases;
+  if (neuralNetwork !== undefined) {
+    biases = flattenSimple(neuralNetwork.biases.map(function(x) { return unpack(x) }));
+    weights = flattenSimple(neuralNetwork.weights.map(function(x) { return unpack(x) }));
+  }
 
 
-
-
-
-var width = 500,
-    height = 500,
-    minCircleRadius = 0;
-/*
-// 2,2,1
-var graphMLPData = {
-  nodes: [
-    { name: "in1", group: 0, size: 25, x: width/4, y: height/3, fixed: true },
-    { name: "in2", group: 1, size: 25, x: width/4, y: 2*height/3, fixed: true },
-
-//      { name: "biashidden1", group: 2, size: 25, x: 3*width/8, y: height/6, fixed: true },  
-    { name: "hidden1", group: 3, size: 25, x: width/2, y: height/3, fixed: true },
-    { name: "hidden2", group: 4, size: 25, x: width/2, y: 2*height/3, fixed: true },
-
-//      { name: "biasOut", group: 5, size: 25, x: 5*width/8, y: height/6, fixed: true },  
-    { name: "out1", group: 4, size: 25, x: 3*width/4, y: height/2, fixed: true }
-  ],
-  links: [  //source & target: index in nodes array,   value:  strength of link 
-      
-    { source: 0, target: 2, value: 10, display: true },
-    { source: 0, target: 3, value: 10, display: true },
-
-    { source: 1, target: 2, value: 10, display: true },
-    { source: 1, target: 3, value: 10, display: true },
-      
-  //  { source: 2, target: 3, value: 10, display: true },
- //   { source: 2, target: 4, value: 10, display: true },
-
- //   { source: 5, target: 6, value: 10, display: true },
-    
-    { source: 2, target: 4, value: 10, display: true },
-    { source: 3, target: 4, value: 10, display: true },
-     
-  ]
-};
-*/
-
-//1 = 1/2
-//2 = 1/4
-//3 = 1/8
-
-
-
-function buildFullyConnectedNodeGraph(sizes) {
-  var margin = 0,
-      length = sizes.length,
-      n = d3.sum(sizes) * parseInt(length),
+  var length = sizes.length,
+      boundary = options.margin+options.circleSize,
       xScale = d3.scale.linear()
                        .domain([0, length])
-                       .range([margin, width-margin]),
+                       .range([boundary, options.width-boundary]),
       namePrefix = function(index) { 
-                    if(index == 0) return "in";
-                    else if(index == length-1) return "out";
-                    else return "hiddenL" + index;
+                    if(index == 0) return "IN";
+                    else if(index == length-1) return "OUT";
+                    else return "HiddenL" + (index);
                   };
 
   var nodes = sizes.map(function(d, i) { 
-
-              var midpoint = height/2;
-              var num_nodes = d;
-
-
-
-              var yScale = d3.scale.linear()
-                          .domain([0, d])
-                          .range([margin+(height/(d+1)), height-(margin+(height/(d+1)))]);
 
               return d3.range(d).map(function(x, j) {
                 return {
                   layer: i,
                   index: j,
-                  name: namePrefix(i) + "n" + j,
-                  size: 25,
+                  name: namePrefix(i) + "n" + (j+1),
+                  size: options.circleSize,
                   fixed: true,
                   x: xScale(i),
-                  y: yScale(j)
+                  y: (j+1)*options.height/(d+1)
                 }  
               })
          }).reduce(function(d1,d2){ 
@@ -262,6 +120,12 @@ function buildFullyConnectedNodeGraph(sizes) {
          },[])
          .map(function(d, i) {
             d.group = i;
+            
+            if(neuralNetwork === undefined || d.layer == 0)
+              d.bias = 1;
+            else
+              d.bias = biases[i-sizes[0]];
+            
             return d;
          });
   
@@ -279,23 +143,25 @@ function buildFullyConnectedNodeGraph(sizes) {
       }
     });
   }).reduce(function(d1,d2){ 
-            return d1.concat(d2) 
-  },[]);
+    return d1.concat(d2) 
+  },[]).map(function(d, i) {
+    if(neuralNetwork === undefined)
+      d.weight = 10;
+    else
+      d.weight = weights[i];
+
+    return d;
+  });
 
   return {
-    nodes: nodes,
-    links: links
+    nodes: nodes, //nodes store biases
+    links: links  //links store weights
   }
 }
 
-var graphMLPData = buildFullyConnectedNodeGraph([4,3,2,1]);
-
-
-
-
-
-
-
+var graphMLPData = //buildFullyConnectedNodeGraph([2,2,1], {}, myNetwork);
+      buildFullyConnectedNodeGraph([20,10,4,2,1], {circleSize: 8});
+      //buildFullyConnectedNodeGraph([1,1]);
 
 
 var svg = d3.select("#netoworkGraphContainer").append("svg")

@@ -9,6 +9,7 @@ var connect = require('gulp-connect');
 
 //CONFIG PATHS
 var config = {
+	styles : './styles',
 	pages  : './pages',
 	assets : './assets',
 	build:'./dist'
@@ -16,15 +17,15 @@ var config = {
 
 //TASKS
 gulp.task('less', function () {
-	gulp.src(config.pages+'/less/pages.less')
+	gulp.src(config.styles+'/less/styles.less')
 		.pipe(less({
-				paths: [config.pages+'/less/']
+				paths: [config.styles+'/less/']
 		}))
-		.pipe(gulp.dest(config.pages+'/css/'))
+		.pipe(gulp.dest(config.styles+'/css/'))
 		.pipe(connect.reload());
 });
 gulp.task('watch', function () {
-	gulp.watch(config.pages+'/**/*.less', function(event) {
+	gulp.watch(config.styles+'/**/*.less', function(event) {
 		gulp.run('less');
 	});
 });
@@ -45,7 +46,7 @@ gulp.task('copy', ['clean'],function () {
 });
 
 gulp.task('css-min', function(){
-	return gulp.src( [config.build+'./assets/css/*.css' , config.build+'./pages/css/*.css'])
+	return gulp.src( [config.build+'./assets/css/*.css' , config.build+'./styles/css/*.css'])
 		.pipe(minifycss());
 });
 
