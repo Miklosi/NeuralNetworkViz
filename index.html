@@ -38,13 +38,23 @@ var AND_training_data = [
     { value: math.matrix([[1],[1]]), target: [[0]] }
   ];
 
+
+//var testNetworkData = [
+  //{ value: math.matrix([[0]]), target: [[1]] },
+  //{ value: math.matrix([[1]]), target: [[0]] }
+//];
+//var testNetwork = new NeuralNetwork([1,1]);
+//testNetwork.train(testNetworkData, 1, testNetworkData.length, 0.25);
+//testNetwork.evaluate(testNetworkData);
+
+
 //2 (input), 1 (output)  <no hidden layers>
 var mySimpleNetwork = new NeuralNetwork([2,1]);
 //mySimpleNetwork.train(AND_training_data, 5000, AND_training_data.length, 0.25);
 //mySimpleNetwork.evaluate(AND_training_data);
 
 //2 (input), 2 (hidden layer1), 1 (output)
-var myNetwork = new NeuralNetwork([2,2,1]);
+//var myNetwork = new NeuralNetwork([2,2,1]);
 //myNetwork.train(AND_training_data, 5000, AND_training_data.length, 0.25);
 //myNetwork.evaluate(AND_training_data);
 
@@ -166,8 +176,8 @@ function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
 }
 
 var graphMLPData = //buildFullyConnectedNodeGraph([2,2,1], {}, myNetwork);
-      buildFullyConnectedNodeGraph([20,10,4,2,1], {circleSize: 8});
-      //buildFullyConnectedNodeGraph([1,1]);
+      //buildFullyConnectedNodeGraph([20,10,4,2,1], {circleSize: 8});
+      buildFullyConnectedNodeGraph([1,1]);
 
 
 var svg = d3.select("#networkGraphContainer").append("svg")

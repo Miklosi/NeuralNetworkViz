@@ -84,8 +84,9 @@ var NeuralNetwork = function(sizes) {
  		}));
 	};
 
-	var SGD = function(training_data, epochs, mini_batch_size, eta, test_data) {
+	var SGD = function(training_data, epochs, mini_batch_size, eta, lambda, test_data) {
 		var n = training_data.length;
+		var lambda = lambda || 0;
 
 		for (var j = 1; j <= epochs; j++) {
 			var epoch_training_data = training_data; //d3.shuffle(training_data);
@@ -96,7 +97,7 @@ var NeuralNetwork = function(sizes) {
 		  	}
 
 		  	for (var m = 0; m < mini_batches.length; m++) {
-		    	update_mini_batch(mini_batches[m], eta);
+		    	update_mini_batch(mini_batches[m], eta, lambda, training_data.length);
 		  	}
 
 		  	if(test_data)
@@ -172,7 +173,7 @@ var NeuralNetwork = function(sizes) {
 		return [nabla_b, nabla_w];
 	};
 	
-	var update_mini_batch = function(mini_batch, eta) {
+	var update_mini_batch = function(mini_batch, eta, lambda, n) {
 
 		var nabla_b = zeroMatrixCopyOf(self.biases);
 		var nabla_w = zeroMatrixCopyOf(self.weights);
@@ -190,14 +191,20 @@ var NeuralNetwork = function(sizes) {
 		  
 		  self.biases = d3.zip(self.biases, nabla_b)
 		                  .map(function(x, i) {
-		                    var b = x[0], nb = x[1];
-		                    return math.subtract(b, math.multiply(nb, parseFloat(eta)/mini_batch.length));
+		                    var b = x[0], 
+		                    	nb = x[1],
+		                    	bias_delta = math.multiply(nb, parseFloat(eta)/mini_batch.length);
+		                    return math.subtract(b, bias_delta);
 		                  });
-
 		  self.weights = d3.zip(self.weights, nabla_w)
 		                   .map(function(x, i) {
-		                     var w = x[0], nw = x[1];
-		                     return math.subtract(w, math.multiply(nw, parseFloat(eta)/mini_batch.length));
+		                     var w = x[0], 
+		                     	 nw = x[1],
+			                     	//encourages smaller weights in network (less sensitive to noise)
+			                     regularizedWeights = math.multiply(1-eta*(lambda/n), w), 
+			                     weightDelta = math.multiply(nw, parseFloat(eta)/mini_batch.length);
+
+			                 return math.subtract(regularizedWeights, weightDelta);
 		                   });
 		}
 	};
