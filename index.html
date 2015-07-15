@@ -11,7 +11,7 @@
 <script type="text/javascript" src='./src/neural_network.js'></script>
 <script type="text/javascript" src='./src/convnet.min.js'></script>
 -->
-<script type="text/javascript" src='./node_modules/brain/brain-0.5.0.js'></script>
+<script type="text/javascript" src='./src/brain-0.5.0.js'></script>
 
 
 
@@ -45,12 +45,7 @@ var AND_training_data = [
   ];
 
 
-var width = 500,
-    height = 500;
 
-var svg = d3.select("#networkGraphContainer").append("svg")
-    .attr("width", width)
-    .attr("height", height);
 
 
 function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
@@ -158,104 +153,113 @@ function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
   }
 }
 
-    function update(data) {
+function update(data) {
 
 
-      var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
-      var lineScale = d3.scale.linear().domain([0,1]).range([1, 10]);
+  var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
+  var lineScale = d3.scale.linear().domain([0,1]).range([1,10/*5, 15*/]);
 
-      var force = d3.layout.force()
-                    .size([width, height])
-                    .nodes(data.nodes)
-                    .links(data.links)
-                    .linkDistance(width/4);
-
-      var links = svg.selectAll('.link')
-          .data(data.links);
-
-      links.enter()
-           .append('line')
-           .attr('class', 'link');
-
-      var nodes = svg.selectAll(".node")
-                    .data(data.nodes, function(d) { return d.name; }); //key fn
-                    
-      nodes.enter()
-           .append("circle")
-           .attr('class', function (d) { return d.type + " node"});
-
-      //Set up tooltip
-      var tip = d3.tip()
-          .attr('class', 'd3-tip')
-          .offset([-10, 0])
-          .html(function (d) {
-             return "<strong>" + d.name + "</strong><br/>" + d.size; //can be any html text if we want
-          });
-          svg.call(tip);
-
-      nodes.on('mouseover', tip.show) 
-           .on('mouseout', tip.hide); 
-
-      force.on('tick', function() {
-
-          nodes.attr({
-              r: function(d) { return d.size; },
-              cx: function(d) { return d.x; },
-              cy: function(d) { return d.y; }
-          });
-
-          links.attr({
-              x1: function(d) { return d.source.x; },
-              y1: function(d) { return d.source.y; },
-              x2: function(d) { return d.target.x; },
-              y2: function(d) { return d.target.y; }
-          }).style({
-              'stroke-width': function(d) { 
-                return lineScale(sigmoid(d.weight)); 
-              }
-          });
-
-      });
-
-      force.start();
-
-    }
+  var force = d3.layout.force()
+                .size([width, height])
+                .nodes(data.nodes)
+                .links(data.links)
+                .linkDistance(width/4);
+  force.start();
 
 
+  //Set up tooltips
+  var linkTip = d3.tip()
+                 .attr('class', 'd3-tip')
+                 .offset([-10, 0])
+                 .html(function (d) {
+                    return d.weight.toFixed(5); //can be any html text if we want
+                 });
+
+      
+  svg//.call(linkTip)
+      .selectAll("line.link")
+      .data(data.links)
+        .call(bindLinks)
+      .enter()
+        .append("line")
+        .call(bindLinks)
+  
+  svg.selectAll("circle.node")
+      .data(data.nodes, function(d) { return d.name; }) //key fn
+        .call(bindNodes)
+      .enter()
+        .append("circle")
+        .call(bindNodes);
+
+  function bindNodes(selection) {
+    selection
+        .attr({
+          class: function (d) {  return d.type + " node" },
+          r: function(d) { return d.size },
+          cx: function(d) { return d.x },
+          cy: function(d) { return d.y }
+        })
+  }
+
+  function bindLinks(selection) {
+    selection
+      .attr({
+          class: function (d) { return (d.weight < 0) ? "link neg" : "link" },
+          x1: function(d) { return d.source.x },
+          y1: function(d) { return d.source.y },
+          x2: function(d) { return d.target.x },
+          y2: function(d) { return d.target.y }
+      })
+      .style({
+          'stroke-width': function(d) { return lineScale(sigmoid(d.weight)) }
+      })
+//          .on({
+//              mouseover: linkTip.show, 
+//              mouseout: linkTip.hide 
+//          })
+  }
+
+}
+
+var width = 500,//1250,
+    height = 500;//1000;
+
+var svg = d3.select("#networkGraphContainer").append("svg")
+    .attr("width", width)
+    .attr("height", height);
 
 
-
-
-
-
-
-
-
-
-
+var networkVizOptions = { width: width, height: height, circleSize: 25 }; //15
+var networkOptions = {hiddenLayers: [2]}; //[20,10,4,2]
 
 //brainJS is an option for visualizing XOR !
-var net = new brain.NeuralNetwork([2,2,1]);
+var net = new brain.NeuralNetwork(networkOptions);
 net.train(XOR_training_data, {iterations: 1});//hack to have weights & biases registered
 
 //buildGraph first here
-update(buildFullyConnectedNodeGraph(net.sizes, {}, net));
+update(buildFullyConnectedNodeGraph(net.sizes, networkVizOptions, net));
 
-/*
+
 net.train(XOR_training_data,
            {
-            callbackPeriod: 1000,
+            //iterations: 10,
+            callbackPeriod: 1,
             callback: function(cb_data) {
-                console.log('Iterations: %d', cb_data.iterations)
-                update(buildFullyConnectedNodeGraph(net.sizes, {}, {
-                  biases: cb_data.biases,
-                  weights: cb_data.weights
-                }));
+//                  console.log('Iterations: %d', cb_data.iterations)
+                
+//                  update(buildFullyConnectedNodeGraph(net.sizes, {}, {
+//                    biases: cb_data.biases,
+//                    weights: cb_data.weights
+//                  }));
             }
-           });
-var output = net.run([1, 0]);
-*/
+           })
 
+
+var output = net.run([1, 0]);
+
+//setTimeout(function() { 
+  update(buildFullyConnectedNodeGraph(net.sizes, networkVizOptions, net));
+//}, 1000);
 
 
 //var testNetworkData = [

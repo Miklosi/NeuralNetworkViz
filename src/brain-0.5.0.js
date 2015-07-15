@@ -112,7 +112,7 @@ NeuralNetwork.prototype = {
         log("iterations:", i, "training error:", error);
       }
       if (callback && (i % callbackPeriod == 0)) {
-        callback({ error: error, iterations: i, weights: this.weights, biases: this.biases });
+        callback({ error: error, iterations: i, weights: this.weights, biases: this.biases, net: this });
       }
     }
 
