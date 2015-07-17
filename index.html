@@ -132,6 +132,8 @@ function buildFullyConnectedNodeGraph(sizes, options, neuralNetwork) {
       return {
         source: d.group,
         target: x.group,
+        sourceObj: nodes[d.group],
+        targetObj: nodes[x.group],
         value: 10,
         display: true
       }
@@ -159,12 +161,12 @@ function update(data) {
   var sigmoid = function(z) { return 1.0/(1.0 + Math.exp(-z)) };
   var lineScale = d3.scale.linear().domain([0,1]).range([1,10/*5, 15*/]);
 
-  var force = d3.layout.force()
-                .size([width, height])
-                .nodes(data.nodes)
-                .links(data.links)
-                .linkDistance(width/4);
-  force.start();
+//  var force = d3.layout.force()
+//                .size([width, height])
+//                .nodes(data.nodes)
+//                .links(data.links)
+//                .linkDistance(width/4);
+//  force.start();
 
 
   //Set up tooltips
@@ -205,10 +207,10 @@ function update(data) {
     selection
       .attr({
           class: function (d) { return (d.weight < 0) ? "link neg" : "link" },
-          x1: function(d) { return d.source.x },
-          y1: function(d) { return d.source.y },
-          x2: function(d) { return d.target.x },
-          y2: function(d) { return d.target.y }
+          x1: function(d) { return d.sourceObj.x }, //was source
+          y1: function(d) { return d.sourceObj.y }, //was source
+          x2: function(d) { return d.targetObj.x }, //was source
+          y2: function(d) { return d.targetObj.y } //was source
       })
       .style({
           'stroke-width': function(d) { return lineScale(sigmoid(d.weight)) }
@@ -242,15 +244,15 @@ update(buildFullyConnectedNodeGraph(net.sizes, networkVizOptions, net));
 
 net.train(XOR_training_data,
            {
-            //iterations: 10,
-            callbackPeriod: 1,
-            callback: function(cb_data) {
-//                  console.log('Iterations: %d', cb_data.iterations)
+              iterations: 80,
+              callbackPeriod: 5,
+              callback: function(cb_data) {
+                console.log('Iterations: %d', cb_data.iterations)
                 
-//                  update(buildFullyConnectedNodeGraph(net.sizes, {}, {
-//                    biases: cb_data.biases,
-//                    weights: cb_data.weights
-//                  }));
+                  update(buildFullyConnectedNodeGraph(net.sizes, {}, {
+                    biases: cb_data.biases,
+                    weights: cb_data.weights
+                  }));
             }
            })
 
@@ -258,7 +260,7 @@ net.train(XOR_training_data,
 var output = net.run([1, 0]);
 
 //setTimeout(function() { 
-  update(buildFullyConnectedNodeGraph(net.sizes, networkVizOptions, net));
+  //update(buildFullyConnectedNodeGraph(net.sizes, networkVizOptions, net));
 //}, 1000);
 
 
