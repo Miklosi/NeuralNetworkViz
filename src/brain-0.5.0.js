@@ -89,6 +89,8 @@ NeuralNetwork.prototype = {
     var callback = options.callback;
     var callbackPeriod = options.callbackPeriod || 10;
 
+    var done = options.done || function() {};
+
     var inputSize = data[0].input.length;
     var outputSize = data[0].output.length;
 
@@ -100,25 +102,67 @@ NeuralNetwork.prototype = {
     this.initialize(sizes);
 
     var error = 1;
-    for (var i = 0; i < iterations && error > errorThresh; i++) {
-      var sum = 0;
-      for (var j = 0; j < data.length; j++) {
-        var err = this.trainPattern(data[j].input, data[j].output, learningRate);
-        sum += err;
-      }
-      error = sum / data.length;
+    var epochs = 0;
+    var trainPattern = this.trainPattern;
+    selfRef = this;
 
-      if (log && (i % logPeriod == 0)) {
-        log("iterations:", i, "training error:", error);
-      }
-      if (callback && (i % callbackPeriod == 0)) {
-        callback({ error: error, iterations: i, weights: this.weights, biases: this.biases, net: this });
-      }
-    }
+    (function trainEpoch (i) {          
+       setTimeout(function () {   
+
+          epochs++;
+
+          var sum = 0;
+          for (var j = 0; j < data.length; j++) {
+            var err = selfRef.trainPattern(data[j].input, data[j].output, learningRate);
+            sum += err;
+          }
+          error = sum / data.length;
+
+          if (log && (epochs % logPeriod == 0)) {
+            log("iterations:", epochs, "training error:", error);
+          }
+          if (callback && (epochs % callbackPeriod == 0)) {
+            callback({ error: error, iterations: epochs, weights: selfRef.weights, biases: selfRef.biases, net: selfRef });
+          }
+
+          if (error <= errorThresh) {
+            //console.log("training done (converged).");
+            done(error, epochs);
+            return;
+          }
+          if (epochs == iterations) {
+            //console.log("training done (max iterations reached).");
+            done(error, epochs);
+            return;
+          }
+
+          if (--i) trainEpoch(i); 
+
+          
+
+       }, 1)
+    })(iterations); 
+
+
+//    for (var i = 0; i < iterations && error > errorThresh; i++) {
+//      var sum = 0;
+//      for (var j = 0; j < data.length; j++) {
+//        var err = this.trainPattern(data[j].input, data[j].output, learningRate);
+//        sum += err;
+//      }
+//      error = sum / data.length;
+//
+//      if (log && (i % logPeriod == 0)) {
+//        log("iterations:", i, "training error:", error);
+//      }
+//      if (callback && (i % callbackPeriod == 0)) {
+//        callback({ error: error, iterations: i, weights: this.weights, biases: this.biases, net: this });
+//      }
+//    }
 
     return {
       error: error,
-      iterations: i
+      iterations: epochs
     };
   },
 
